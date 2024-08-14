@@ -4,37 +4,61 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"runtime"
 	"strings"
 )
 
-func main()  {
-	//os.Mkdir("/home/matheus/Projetos/testezin", 0750)
-	fmt.Println(os.Getwd())
+/*
+	Tenho 2 opcoes:
+	1 - Iniciar o projeto de qualquer lugar:
+		1.1 - Tenho que passar o endereço de onde eu quero usar
+		1.2 - Tenho que passar o nome das entidades
+	2 - Importar o package e iniciar na pasta que eu to usando:
+		1.1 - tenho que tornar meu module disponivel e usavel para outros
+		1.2 - Tenho que passar o nome das entidades
 
+*/
+
+// Preciso fazer isso uma transacao
+func main()  {
+	basePath := getBasePath(os.Args)
+
+	projectName, err := getProjectName(os.Args)
+	if err != nil {
+		_, file, line, _ := runtime.Caller(0)
+		log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
+	}
+	basePath = fmt.Sprintf("%s/%s", basePath, projectName)
+	fmt.Printf("basePath: %+v\n", basePath)
+	os.Mkdir(basePath, 0750)
 
 	// 1 - tenho que definir o core
 	entities, err := getEntities(os.Args)
 	if err != nil {
 		_, file, line, _ := runtime.Caller(0)
+		//undoChanges(basePath)
 		log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
 	}
 
 	// 2 - criar a estrutura de pastas
-	err = makeHexagonalDirectories()
+	err = makeHexagonalDirectories(basePath)
 	if err != nil {
 		_, file, line, _ := runtime.Caller(0)
+		//undoChanges(basePath)
 		log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
 	}
 
 	// 3 - Criar os arquivos do core
 	fmt.Printf("entities: %+v\n", entities)
-	err = writeCoreFiles(entities)
+	err = writeCoreFiles(basePath, entities)
 	if err != nil {
 		_, file, line, _ := runtime.Caller(0)
+		//undoChanges(basePath)
 		log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
 	}
 
+	undoChanges(basePath)
 	// 4 - Criar o template dos adapters
 
 }
@@ -44,53 +68,74 @@ func goFile(fileName string) string {
 	return 	fileName
 }
 
-func makeHexagonalDirectories() error {
-	err := os.Mkdir("internal", 0750)
+func getProjectName(args []string) (string, error) {
+	var projectName string
+	if len(args) <= 1 {
+		return "", fmt.Errorf("project name was not passed")
+	} else {
+		projectName = args[1]
+	}
+	return projectName, nil
+} 
+
+func getBasePath(args []string) string {
+	var basePath string
+	fmt.Println(args)
+	if len(args) <= 2 {
+		basePath = "."
+	} else {
+		basePath = args[2]
+	}
+	return basePath
+}
+
+func makeHexagonalDirectories(basePath string) error {
+	err := os.Mkdir(fmt.Sprintf("%s/internal", basePath), 0750)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("internal/adapters", 0750)
+	err = os.Mkdir(fmt.Sprintf("%s/internal/adapters", basePath), 0750)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("internal/adapters/http", 0750)
+	err = os.Mkdir(fmt.Sprintf("%s/internal/adapters/http", basePath), 0750)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("internal/adapters/storage", 0750)
+	err = os.Mkdir(fmt.Sprintf("%s/internal/adapters/storage", basePath), 0750)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("internal/core", 0750)
+	err = os.Mkdir(fmt.Sprintf("%s/internal/core", basePath), 0750)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("internal/core/domain", 0750)
+	err = os.Mkdir(fmt.Sprintf("%s/internal/core/domain", basePath), 0750)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("internal/core/port", 0750)
+	err = os.Mkdir(fmt.Sprintf("%s/internal/core/port", basePath), 0750)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("internal/core/service", 0750)
+	err = os.Mkdir(fmt.Sprintf("%s/internal/core/service", basePath), 0750)
 	if err != nil {
 		return err
 	}
 
-	err = os.Mkdir("internal/core/util", 0750)
+	err = os.Mkdir(fmt.Sprintf("%s/internal/core/util", basePath), 0750)
 	if err != nil {
 		return err
 	}
 
-/* 	err = os.Mkdir("cmd", 0750)
+/* 	err = os.Mkdir(fmt.Sprintf("%s/cmd", basePath), 0750)
 	if err != nil {
 		return err
 	} */
@@ -99,31 +144,31 @@ func makeHexagonalDirectories() error {
 }
 
 func getEntities(args []string) ([]string, error) {
-	if (len(args) <= 1) {
+	if (len(args) <= 3) {
 		return nil, fmt.Errorf("entities not passed in arguments")
 	}
 	entities := make([]string, 0)
-	for i := 1; i < len(args); i++ {
+	for i := 3; i < len(args); i++ {
 		entities = append(entities, args[i])
 	}
 	return entities, nil
 }
 
-func writeCoreFiles(entities []string) error {
+func writeCoreFiles(basePath string, entities []string) error {
 	for i := 0; i < len(entities); i++ {
-		err := writeDomainFile(entities[i])
+		err := writeDomainFile(basePath, entities[i])
 		if err != nil {
 			_, file, line, _ := runtime.Caller(0)
 			log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
 		}
 
-		err = writePortFile(entities[i])
+		err = writePortFile(basePath, entities[i])
 		if err != nil {
 			_, file, line, _ := runtime.Caller(0)
 			log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
 		}
 
-		err = writeServiceFile(entities[i])
+		err = writeServiceFile(basePath, entities[i])
 		if err != nil {
 			_, file, line, _ := runtime.Caller(0)
 			log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
@@ -133,8 +178,8 @@ func writeCoreFiles(entities []string) error {
 	return nil
 }
 
-func writeDomainFile(entity string) error {
-	path := fmt.Sprintf("internal/core/domain/%s", entity)
+func writeDomainFile(basePath, entity string) error {
+	path := fmt.Sprintf("%s/internal/core/domain/%s", basePath, entity)
 	data := writeDomainData(entity)
 	err := os.WriteFile(goFile(path), data, 0600)
 	if err != nil {
@@ -144,8 +189,8 @@ func writeDomainFile(entity string) error {
 	return nil
 }
 
-func writePortFile(entity string) error {
-	path := fmt.Sprintf("internal/core/port/%s", entity)
+func writePortFile(basePath, entity string) error {
+	path := fmt.Sprintf("%s/internal/core/port/%s", basePath, entity)
 	data := writePortData(entity)
 	err := os.WriteFile(goFile(path), data, 0600)
 	if err != nil {
@@ -155,8 +200,8 @@ func writePortFile(entity string) error {
 	return nil
 }
  
-func writeServiceFile(entity string) error {
-	path := fmt.Sprintf("internal/core/service/%s", entity)
+func writeServiceFile(basePath, entity string) error {
+	path := fmt.Sprintf("%s/internal/core/service/%s", basePath, entity)
 	data := writeServiceData(entity)
 	err := os.WriteFile(goFile(path), data, 0600)
 	if err != nil {
@@ -245,4 +290,9 @@ func capitalizeFirstLetter(str string) string {
 	restOfString := strings.TrimLeft(str, firstLetter)
 	capitalizedFirstLetter := strings.ToUpper(firstLetter)
 	return fmt.Sprintf("%s%s", capitalizedFirstLetter, restOfString)
+}
+
+func undoChanges(basePath string) {
+	cmd := exec.Command("rm", "-r", basePath)
+	cmd.Run()
 }

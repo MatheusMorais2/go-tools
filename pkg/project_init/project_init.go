@@ -8,10 +8,18 @@ import (
 	"strings"
 )
 
-func main()  {
-	//os.Mkdir("/home/matheus/Projetos/testezin", 0750)
-	fmt.Println(os.Getwd())
+/*
+	Tenho 2 opcoes:
+	1 - Iniciar o projeto de qualquer lugar:
+		1.1 - Tenho que passar o endereço de onde eu quero usar
+		1.2 - Tenho que passar o nome das entidades
+	2 - Importar o package e iniciar na pasta que eu to usando:
+		1.1 - tenho que tornar meu module disponivel e usavel para outros
+		1.2 - Tenho que passar o nome das entidades
 
+*/
+
+func main()  {
 
 	// 1 - tenho que definir o core
 	entities, err := getEntities(os.Args)
@@ -99,6 +107,7 @@ func makeHexagonalDirectories() error {
 }
 
 func getEntities(args []string) ([]string, error) {
+	fmt.Println(args)
 	if (len(args) <= 1) {
 		return nil, fmt.Errorf("entities not passed in arguments")
 	}
