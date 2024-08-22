@@ -8,9 +8,9 @@ import (
 	"runtime"
 )
 
-func WritePortFile(basePath, entity string) error {
+func WritePortFile(projectName, basePath, entity string) error {
 	path := fmt.Sprintf("%s/internal/core/port/%s", basePath, entity)
-	data := writePortData(entity)
+	data := writePortData(projectName, entity)
 	err := os.WriteFile(utils.GoFile(path), data, 0600)
 	if err != nil {
 		_, file, line, _ := runtime.Caller(0)
@@ -19,10 +19,13 @@ func WritePortFile(basePath, entity string) error {
 	return nil
 }
 
-func writePortData(entity string) []byte {
+func writePortData(projectName, entity string) []byte {
 	capitalizedEntity := utils.CapitalizeFirstLetter(entity)
 	fileString := fmt.Sprintf(`package port
-import "context"
+import (
+	"context"
+	"go-tools/%s/internal/core/domain"
+)
 
 type %sRepository interface {
 	Create(ctx context.Context, %s *domain.%s) (*domain.%s, error)
@@ -36,7 +39,7 @@ type %sService interface {
 	Update(ctx context.Context, %s *domain.%s) (*domain.%s, error)
 	Delete(ctx context.Context, %s *domain.%s) (*domain.%s, error)
 	Get(ctx context.Context, %s *domain.%s) (*domain.%s, error)
-}`, capitalizedEntity, 
+}`, projectName, capitalizedEntity, 
 	entity, capitalizedEntity, capitalizedEntity,
 	entity, capitalizedEntity, capitalizedEntity,
 	entity, capitalizedEntity, capitalizedEntity,

@@ -43,7 +43,7 @@ func Server()  {
 		fileString = fileString + fmt.Sprintf(`
 	%sRouter(router)`, capitalizedEntity)
 	}
-	fileString = fileString + fmt.Sprintf(`
+	fileString = fileString + `
 
 	server := http.Server{
 		Addr: "localhost:8080",
@@ -52,7 +52,7 @@ func Server()  {
 		
 	fmt.Println("Server listening on localhost:8080")
 	server.ListenAndServe()
-}`)
+}`
 	return []byte(fileString)
 }
 

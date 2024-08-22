@@ -8,9 +8,9 @@ import (
 	"runtime"
 )
 
-func WriteServiceFile(basePath, entity string) error {
+func WriteServiceFile(projectName, basePath, entity string) error {
 	path := fmt.Sprintf("%s/internal/core/service/%s", basePath, entity)
-	data := writeServiceData(entity)
+	data := writeServiceData(projectName, entity)
 	err := os.WriteFile(utils.GoFile(path), data, 0600)
 	if err != nil {
 		_, file, line, _ := runtime.Caller(0)
@@ -19,10 +19,13 @@ func WriteServiceFile(basePath, entity string) error {
 	return nil
 }
 
-func writeServiceData(entity string) []byte {
+func writeServiceData(projectName string,entity string) []byte {
 	capitalizedEntity := utils.CapitalizeFirstLetter(entity)
 	fileString := fmt.Sprintf(`package service
-import "context"
+import (
+	"context"
+	"go-tools/%s/internal/core/domain"
+)
 
 type %sService struct {}
 
@@ -31,17 +34,21 @@ func New%sService() *%sService {
 	}
 }
 	
-func (s *%sService) Create(ctx context.Context, %s *domain.%s) (*%s, error) {
+func (s *%sService) Create(ctx context.Context, %s *domain.%s) (*domain.%s, error) {
+	return nil, nil
 }
 
-func (s *%sService) Get(ctx context.Context, %s *domain.%s) (*%s, error) {
+func (s *%sService) Get(ctx context.Context, %s *domain.%s) (*domain.%s, error) {
+	return nil, nil
 }
 
-func (s *%sService) Update(ctx context.Context, %s *domain.%s) (*%s, error) {
+func (s *%sService) Update(ctx context.Context, %s *domain.%s) (*domain.%s, error) {
+	return nil, nil
 }
 
-func (s *%sService) Delete(ctx context.Context, %s *domain.%s) (*%s, error) {
-}`, capitalizedEntity, 
+func (s *%sService) Delete(ctx context.Context, %s *domain.%s) (*domain.%s, error) {
+	return nil, nil
+}`, projectName, capitalizedEntity, 
 	capitalizedEntity, capitalizedEntity,
 	capitalizedEntity,
 	capitalizedEntity, entity, capitalizedEntity, capitalizedEntity,

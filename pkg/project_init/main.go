@@ -52,7 +52,7 @@ func main()  {
 	}
 
 	fmt.Printf("entities: %+v\n", entities)
-	err = writeCoreFiles(basePath, entities)
+	err = writeCoreFiles(projectName, basePath, entities)
 	if err != nil {
 		_, file, line, _ := runtime.Caller(0)
 		utils.UndoChanges(basePath)
@@ -65,6 +65,13 @@ func main()  {
 		utils.UndoChanges(basePath)
 		log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
 	}
+
+	err = writePostgresAdapter(basePath, entities)
+	if err != nil {
+		_, file, line, _ := runtime.Caller(0)
+		log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
+	}
+
 }
 
 
@@ -111,6 +118,11 @@ func makeHexagonalDirectories(basePath string) error {
 		return err
 	}
 
+	err = os.Mkdir(fmt.Sprintf("%s/internal/adapters/storage/sql", basePath), 0750)
+	if err != nil {
+		return err
+	}
+
 	err = os.Mkdir(fmt.Sprintf("%s/internal/core", basePath), 0750)
 	if err != nil {
 		return err
@@ -150,7 +162,7 @@ func getEntities(args []string) ([]string, error) {
 	return entities, nil
 }
 
-func writeCoreFiles(basePath string, entities []string) error {
+func writeCoreFiles(projectName, basePath string, entities []string) error {
 	for i := 0; i < len(entities); i++ {
 		err := templates.WriteDomainFile(basePath, entities[i])
 		if err != nil {
@@ -158,13 +170,13 @@ func writeCoreFiles(basePath string, entities []string) error {
 			log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
 		}
 
-		err = templates.WritePortFile(basePath, entities[i])
+		err = templates.WritePortFile(projectName, basePath, entities[i])
 		if err != nil {
 			_, file, line, _ := runtime.Caller(0)
 			log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
 		}
 
-		err = templates.WriteServiceFile(basePath, entities[i])
+		err = templates.WriteServiceFile(projectName ,basePath, entities[i])
 		if err != nil {
 			_, file, line, _ := runtime.Caller(0)
 			log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
@@ -205,6 +217,11 @@ func writeHttpAdapter(basePath string, entities []string) error {
 
 //TODO
 func writePostgresAdapter(basePath string, entities []string) error {
+	err := templates.WriteMainPostgresRepositoryFile(basePath)
+	if err != nil {
+		_, file, line, _ := runtime.Caller(0)
+		log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
+	}
 	return nil
 }
 
