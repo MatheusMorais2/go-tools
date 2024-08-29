@@ -193,7 +193,7 @@ func writeAdapters(basePath string, entities []string) error {
 		_, file, line, _ := runtime.Caller(0)
 		log.Fatal(fmt.Printf("Line: %v, File: %s\nError: %+v\n", line, file, err))
 	}
-	fmt.Println("fuck git")
+
 	return nil
 }
 
